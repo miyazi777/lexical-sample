@@ -5,6 +5,7 @@ import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import LexicalErrorBoundary from "@lexical/react/LexicalErrorBoundary";
 import styles from "./Editor.module.scss";
 import { AutoFocusPlugin } from "./plugins/AutoFocusPlugin";
+import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
 
 export const Editor: FC = () => {
   const initialConfig = {
@@ -23,6 +24,7 @@ export const Editor: FC = () => {
         />
       </div>
       <AutoFocusPlugin />
+      <HistoryPlugin />
     </LexicalComposer>
   );
 };
