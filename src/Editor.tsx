@@ -8,12 +8,14 @@ import { AutoFocusPlugin } from "./plugins/AutoFocusPlugin";
 import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
 import { nodes } from "./nodes";
 import { ToolbarPlugin } from "./plugins/ToolbarPlugin";
+import { theme } from "./editorTheme";
 
 export const Editor: FC = () => {
   const initialConfig = {
     namespace: "MyEditor",
     onError: (error: Error) => console.error(error),
     nodes: nodes,
+    theme: theme,
   };
   return (
     <LexicalComposer initialConfig={initialConfig}>
