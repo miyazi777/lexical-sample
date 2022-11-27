@@ -3,6 +3,7 @@ import { LexicalComposer } from "@lexical/react/LexicalComposer";
 import { ContentEditable } from "@lexical/react/LexicalContentEditable";
 import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import LexicalErrorBoundary from "@lexical/react/LexicalErrorBoundary";
+import styles from "./Editor.module.scss";
 
 export const Editor: FC = () => {
   const initialConfig = {
@@ -11,11 +12,15 @@ export const Editor: FC = () => {
   };
   return (
     <LexicalComposer initialConfig={initialConfig}>
-      <RichTextPlugin
-        contentEditable={<ContentEditable />}
-        placeholder={<div>Some enter</div>}
-        ErrorBoundary={LexicalErrorBoundary}
-      />
+      <div className={styles.editorContainer}>
+        <RichTextPlugin
+          contentEditable={
+            <ContentEditable className={styles.contentEditable} />
+          }
+          placeholder={<div className={styles.placeholder}>Some enter</div>}
+          ErrorBoundary={LexicalErrorBoundary}
+        />
+      </div>
     </LexicalComposer>
   );
 };
