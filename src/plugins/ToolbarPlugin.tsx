@@ -22,15 +22,17 @@ type BlockType = keyof typeof SupportedBlockType;
 
 export const ToolbarPlugin: FC = () => {
   const [blockType, setBlockType] = useState<BlockType>("paragraph");
-  const [editor] = useLexicalComposerContext();
+  const [editor] = useLexicalComposerContext(); // lexical editorインスタンスを取得
 
+  // heading nodeの追加
   const formatHeading = useCallback(
     (type: HeadingTagType) => {
       if (blockType !== type) {
         editor.update(() => {
-          const selection = $getSelection();
+          const selection = $getSelection(); // 現在の選択状態取得
+          // 選択状態が範囲選択か、を判定
           if ($isRangeSelection(selection)) {
-            $wrapNodes(selection, () => $createHeadingNode(type));
+            $wrapNodes(selection, () => $createHeadingNode(type)); // heading nodeを作成し、既存nodeをラップした形にする
           }
         });
       }
@@ -38,6 +40,7 @@ export const ToolbarPlugin: FC = () => {
     [blockType, editor]
   );
 
+  // ツールバーがアクティブになるようにする
   useEffect(() => {
     return editor.registerUpdateListener(({ editorState }) => {
       editorState.read(() => {
@@ -65,6 +68,7 @@ export const ToolbarPlugin: FC = () => {
     });
   }, [editor]);
 
+  // ツールバーの表示
   return (
     <div className={styles.toolbar}>
       <button
@@ -73,7 +77,7 @@ export const ToolbarPlugin: FC = () => {
         title={SupportedBlockType["h1"]}
         aria-label={SupportedBlockType["h1"]}
         aria-checked={blockType === "h1"}
-        onClick={() => formatHeading("h1")}
+        onClick={() => formatHeading("h1")} // ボタンがクリックされたらフォーマット開始
       >
         <div>H1</div>
       </button>
