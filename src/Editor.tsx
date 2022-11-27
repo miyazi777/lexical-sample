@@ -4,6 +4,7 @@ import { ContentEditable } from "@lexical/react/LexicalContentEditable";
 import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import LexicalErrorBoundary from "@lexical/react/LexicalErrorBoundary";
 import styles from "./Editor.module.scss";
+import { AutoFocusPlugin } from "./plugins/AutoFocusPlugin";
 
 export const Editor: FC = () => {
   const initialConfig = {
@@ -21,6 +22,7 @@ export const Editor: FC = () => {
           ErrorBoundary={LexicalErrorBoundary}
         />
       </div>
+      <AutoFocusPlugin />
     </LexicalComposer>
   );
 };
