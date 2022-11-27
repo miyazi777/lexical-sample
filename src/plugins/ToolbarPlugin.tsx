@@ -28,6 +28,7 @@ export const ToolbarPlugin: FC = () => {
   const formatHeading = useCallback(
     (type: HeadingTagType) => {
       if (blockType !== type) {
+        // editorの状態を更新するメソッド
         editor.update(() => {
           const selection = $getSelection(); // 現在の選択状態取得
           // 選択状態が範囲選択か、を判定
