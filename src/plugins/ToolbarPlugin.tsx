@@ -11,11 +11,13 @@ import {
   COMMAND_PRIORITY_LOW,
   createCommand,
   LexicalCommand,
+  RangeSelection,
   SELECTION_CHANGE_COMMAND,
 } from "lexical";
 import { FC, MutableRefObject, useCallback, useEffect, useState } from "react";
 import styles from "./ToolbarPlugin.module.scss";
-import { TOGGLE_LINK_COMMAND } from "@lexical/link";
+import { $isLinkNode, TOGGLE_LINK_COMMAND } from "@lexical/link";
+import { $isAtNodeEnd } from "@lexical/selection";
 
 const SupportedBlockType = {
   paragraph: "Paragraph",
@@ -79,8 +81,34 @@ export const ToolbarPlugin = () => {
     });
   }, [editor]);
 
+  function getSelectedNode(selection: RangeSelection) {
+    const anchor = selection.anchor;
+    const focus = selection.focus;
+    const anchorNode = selection.anchor.getNode();
+    const focusNode = selection.focus.getNode();
+    if (anchorNode === focusNode) {
+      return anchorNode;
+    }
+    const isBackward = selection.isBackward();
+    if (isBackward) {
+      return $isAtNodeEnd(focus) ? anchorNode : focusNode;
+    } else {
+      return $isAtNodeEnd(anchor) ? focusNode : anchorNode;
+    }
+  }
+
   const updatePopup = useCallback(() => {
     console.log("event1");
+    const selection = $getSelection();
+    if ($isRangeSelection(selection)) {
+      const node = getSelectedNode(selection);
+      const parent = node.getParent();
+      if ($isLinkNode(parent)) {
+        console.log(parent.getURL());
+      } else if ($isLinkNode(node)) {
+        console.log(node.getURL());
+      }
+    }
   }, []);
 
   // 範囲選択イベントの拾い方
