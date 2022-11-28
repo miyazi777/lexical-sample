@@ -9,6 +9,7 @@ import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
 import { nodes } from "./nodes";
 import { ToolbarPlugin } from "./plugins/ToolbarPlugin";
 import { theme } from "./editorTheme";
+import { LinkPlugin } from "@lexical/react/LexicalLinkPlugin";
 
 export const Editor: FC = () => {
   const initialConfig = {
@@ -31,6 +32,7 @@ export const Editor: FC = () => {
       </div>
       <AutoFocusPlugin />
       <HistoryPlugin />
+      <LinkPlugin />
     </LexicalComposer>
   );
 };

@@ -15,6 +15,7 @@ import {
 } from "lexical";
 import { FC, MutableRefObject, useCallback, useEffect, useState } from "react";
 import styles from "./ToolbarPlugin.module.scss";
+import { TOGGLE_LINK_COMMAND } from "@lexical/link";
 
 const SupportedBlockType = {
   paragraph: "Paragraph",
@@ -116,6 +117,10 @@ export const ToolbarPlugin = () => {
   //  );
   //});
 
+  const updateLink = useCallback(() => {
+    editor.dispatchCommand(TOGGLE_LINK_COMMAND, "http://yahoo.co.jp");
+  }, [editor]);
+
   // ツールバーの表示
   return (
     <div className={styles.toolbar}>
@@ -148,6 +153,16 @@ export const ToolbarPlugin = () => {
         onClick={() => formatHeading("h3")}
       >
         <div>H3</div>
+      </button>
+      <button
+        type="button"
+        role="checkbox"
+        title={SupportedBlockType["h3"]}
+        aria-label={SupportedBlockType["h3"]}
+        aria-checked={blockType === "h3"}
+        onClick={() => updateLink()}
+      >
+        <div>LK</div>
       </button>
     </div>
   );
