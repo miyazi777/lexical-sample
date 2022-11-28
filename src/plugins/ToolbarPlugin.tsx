@@ -5,8 +5,15 @@ import {
   $isHeadingNode,
 } from "@lexical/rich-text";
 import { $wrapNodes } from "@lexical/selection";
-import { $getSelection, $isRangeSelection } from "lexical";
-import { FC, useCallback, useEffect, useState } from "react";
+import {
+  $getSelection,
+  $isRangeSelection,
+  COMMAND_PRIORITY_LOW,
+  createCommand,
+  LexicalCommand,
+  SELECTION_CHANGE_COMMAND,
+} from "lexical";
+import { FC, MutableRefObject, useCallback, useEffect, useState } from "react";
 import styles from "./ToolbarPlugin.module.scss";
 
 const SupportedBlockType = {
@@ -20,7 +27,9 @@ const SupportedBlockType = {
 } as const;
 type BlockType = keyof typeof SupportedBlockType;
 
-export const ToolbarPlugin: FC = () => {
+export const HELLO_WORLD_COMMAND: LexicalCommand<void> = createCommand();
+
+export const ToolbarPlugin = () => {
   const [blockType, setBlockType] = useState<BlockType>("paragraph");
   const [editor] = useLexicalComposerContext(); // lexical editorインスタンスを取得
 
@@ -68,6 +77,44 @@ export const ToolbarPlugin: FC = () => {
       });
     });
   }, [editor]);
+
+  const updatePopup = useCallback(() => {
+    console.log("event1");
+  }, []);
+
+  // 範囲選択イベントの拾い方
+  useEffect(() => {
+    return editor.registerCommand(
+      SELECTION_CHANGE_COMMAND,
+      () => {
+        updatePopup();
+        return true;
+      },
+      COMMAND_PRIORITY_LOW
+    );
+  }, [editor, updatePopup]);
+
+  // クリックイベントの拾いかた
+  //useEffect(() => {
+  //  return editor.registerRootListener(
+  //    (
+  //      rootElement: null | HTMLElement,
+  //      prevRootElement: null | HTMLElement
+  //    ) => {
+  //      if (prevRootElement !== null) {
+  //        prevRootElement.removeEventListener("click", () => {
+  //          console.log("root click");
+  //        });
+  //      }
+
+  //      if (rootElement !== null) {
+  //        rootElement.addEventListener("click", () => {
+  //          console.log("root click");
+  //        });
+  //      }
+  //    }
+  //  );
+  //});
 
   // ツールバーの表示
   return (
