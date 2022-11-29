@@ -126,13 +126,19 @@ export const ToolbarPlugin = () => {
         console.log(node.getURL());
         setUrl(node.getURL());
       } else {
-        console.log("not link node");
+        //console.log("not link node");
       }
     }
   }, []);
 
   useEffect(() => {
     return mergeRegister(
+      editor.registerUpdateListener(({ editorState }) => {
+        editorState.read(() => {
+          updatePopup();
+        });
+      }),
+
       // 範囲選択イベント
       editor.registerCommand(
         SELECTION_CHANGE_COMMAND,
@@ -231,7 +237,7 @@ export const ToolbarPlugin = () => {
       </div>
       {show &&
         createPortal(
-          <FloatingEditor editor={editor}></FloatingEditor>,
+          <FloatingEditor editor={editor} show={show}></FloatingEditor>,
           document.body
         )}
     </>
@@ -252,9 +258,10 @@ function positionEditorElement(editor: HTMLElement, rect: ClientRect | null) {
 
 type FloatingEditorProps = {
   editor: LexicalEditor;
+  show: boolean;
 };
 
-function FloatingEditor({ editor }: FloatingEditorProps) {
+function FloatingEditor({ editor, show }: FloatingEditorProps) {
   const editorRef = useRef<HTMLDivElement | null>(null);
   const mouseDownRef = useRef(false);
   const [linkUrl, setLinkUrl] = useState("");
@@ -329,6 +336,7 @@ function FloatingEditor({ editor }: FloatingEditorProps) {
         SELECTION_CHANGE_COMMAND,
         () => {
           updateLinkEditor();
+          console.log("selection change command");
           return true;
         },
         1
@@ -336,9 +344,16 @@ function FloatingEditor({ editor }: FloatingEditorProps) {
     );
   }, [editor, updateLinkEditor]);
 
+  // 最初に表示された時にfloatingの位置を確定する為に必要
+  useEffect(() => {
+    editor.getEditorState().read(() => {
+      updateLinkEditor();
+    });
+  }, [editor, updateLinkEditor]);
+
   return (
     <div ref={editorRef} className={styles.testEditorContainer}>
-      <div className={styles.testEditorContent}>editor test</div>
+      <div>editor test</div>
     </div>
   );
 }
