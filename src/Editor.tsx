@@ -24,7 +24,10 @@ export const Editor: FC = () => {
       <div className={styles.editorContainer}>
         <RichTextPlugin
           contentEditable={
-            <ContentEditable className={styles.contentEditable} />
+            <ContentEditable
+              className={styles.contentEditable}
+              id="content-editor"
+            />
           }
           placeholder={<div className={styles.placeholder}>Some enter</div>}
           ErrorBoundary={LexicalErrorBoundary}

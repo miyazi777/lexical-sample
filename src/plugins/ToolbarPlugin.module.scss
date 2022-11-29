@@ -5,6 +5,11 @@
   gap: 8px;
 }
 
+.urlArea {
+  height: 32px;
+  border: 1rem solid #888888;
+}
+
 .toolbar button {
   display: inline-flex;
   align-items: center;
@@ -45,4 +50,21 @@
   transform: translateY(-50%);
   color: #a0a0a0;
   pointer-events: none;
+}
+
+.link-editor {
+  position: absolute;
+  z-index: 100;
+  top: 0px;
+  left: 0px;
+  margin-top: 6px;
+  max-width: 300px;
+  width: 100%; 
+  background-color: #a0a0a0;
+}
+
+.testEditorContainer {
+  position: absolute;
+  z-index: 10;
+  background-color: #888;
 }

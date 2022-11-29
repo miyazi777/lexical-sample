@@ -8,16 +8,29 @@ import { $wrapNodes } from "@lexical/selection";
 import {
   $getSelection,
   $isRangeSelection,
+  CLICK_COMMAND,
   COMMAND_PRIORITY_LOW,
   createCommand,
   LexicalCommand,
   RangeSelection,
   SELECTION_CHANGE_COMMAND,
+  LexicalEditor,
+  NodeSelection,
+  GridSelection,
 } from "lexical";
-import { FC, MutableRefObject, useCallback, useEffect, useState } from "react";
+import {
+  FC,
+  MutableRefObject,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import styles from "./ToolbarPlugin.module.scss";
 import { $isLinkNode, TOGGLE_LINK_COMMAND } from "@lexical/link";
 import { $isAtNodeEnd } from "@lexical/selection";
+import { mergeRegister } from "@lexical/utils";
+import { createPortal } from "react-dom";
 
 const SupportedBlockType = {
   paragraph: "Paragraph",
@@ -35,6 +48,7 @@ export const HELLO_WORLD_COMMAND: LexicalCommand<void> = createCommand();
 export const ToolbarPlugin = () => {
   const [blockType, setBlockType] = useState<BlockType>("paragraph");
   const [editor] = useLexicalComposerContext(); // lexical editorインスタンスを取得
+  const [url, setUrl] = useState("");
 
   // heading nodeの追加
   const formatHeading = useCallback(
@@ -81,6 +95,7 @@ export const ToolbarPlugin = () => {
     });
   }, [editor]);
 
+  // 指定されたselectionから該当するnodeを取得する
   function getSelectedNode(selection: RangeSelection) {
     const anchor = selection.anchor;
     const focus = selection.focus;
@@ -98,100 +113,248 @@ export const ToolbarPlugin = () => {
   }
 
   const updatePopup = useCallback(() => {
-    console.log("event1");
+    const selection = $getSelection();
+    // 選択されているのが範囲指定かどうかの判定
+    if ($isRangeSelection(selection)) {
+      // 該当するnodeを取得
+      const node = getSelectedNode(selection);
+      const parent = node.getParent();
+      if ($isLinkNode(parent)) {
+        console.log(parent.getURL());
+        setUrl(parent.getURL());
+      } else if ($isLinkNode(node)) {
+        console.log(node.getURL());
+        setUrl(node.getURL());
+      } else {
+        console.log("not link node");
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    return mergeRegister(
+      // 範囲選択イベント
+      editor.registerCommand(
+        SELECTION_CHANGE_COMMAND,
+        () => {
+          updatePopup();
+          return true;
+        },
+        COMMAND_PRIORITY_LOW
+      ),
+      // クリックイベント
+      editor.registerCommand(
+        CLICK_COMMAND,
+        () => {
+          updatePopup();
+          return true;
+        },
+        COMMAND_PRIORITY_LOW
+      )
+    );
+  }, [editor, updatePopup]);
+
+  // リンク登録
+  const updateLink = useCallback(() => {
+    editor.dispatchCommand(TOGGLE_LINK_COMMAND, url);
+  }, [editor, url]);
+
+  // エディタ
+  const [show, setShow] = useState(false);
+
+  // ツールバーの表示
+  return (
+    <>
+      <div className={styles.toolbar}>
+        <button
+          type="button"
+          role="checkbox"
+          title={SupportedBlockType["h1"]}
+          aria-label={SupportedBlockType["h1"]}
+          aria-checked={blockType === "h1"}
+          onClick={() => formatHeading("h1")} // ボタンがクリックされたらフォーマット開始
+        >
+          <div>H1</div>
+        </button>
+        <button
+          type="button"
+          role="checkbox"
+          title={SupportedBlockType["h2"]}
+          aria-label={SupportedBlockType["h2"]}
+          aria-checked={blockType === "h2"}
+          onClick={() => formatHeading("h2")}
+        >
+          <div>H2</div>
+        </button>
+        <button
+          type="button"
+          role="checkbox"
+          title={SupportedBlockType["h3"]}
+          aria-label={SupportedBlockType["h3"]}
+          aria-checked={blockType === "h3"}
+          onClick={() => formatHeading("h3")}
+        >
+          <div>H3</div>
+        </button>
+        <button
+          type="button"
+          role="checkbox"
+          title={SupportedBlockType["h3"]}
+          aria-label={SupportedBlockType["h3"]}
+          aria-checked={blockType === "h3"}
+          onClick={() => updateLink()}
+        >
+          <div>LK</div>
+        </button>
+        <button
+          type="button"
+          role="checkbox"
+          title={SupportedBlockType["h3"]}
+          aria-label={SupportedBlockType["h3"]}
+          aria-checked={blockType === "h3"}
+          onClick={() => setShow(true)}
+        >
+          <div>MD</div>
+        </button>
+        <div className={styles.urlArea}>
+          <input
+            type="text"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                editor.dispatchCommand(TOGGLE_LINK_COMMAND, url);
+              }
+            }}
+          ></input>
+        </div>
+      </div>
+      {show &&
+        createPortal(
+          <FloatingEditor editor={editor}></FloatingEditor>,
+          document.body
+        )}
+    </>
+  );
+};
+
+function positionEditorElement(editor: HTMLElement, rect: ClientRect | null) {
+  if (rect === null) {
+    editor.style.opacity = "0";
+  } else {
+    editor.style.opacity = "1";
+    editor.style.top = `${rect.top + rect.height + window.pageYOffset + 10}px`;
+    editor.style.left = `${
+      rect.left + window.pageXOffset - editor.offsetWidth / 2 + rect.width / 2
+    }px`;
+  }
+}
+
+type FloatingEditorProps = {
+  editor: LexicalEditor;
+};
+
+function FloatingEditor({ editor }: FloatingEditorProps) {
+  const editorRef = useRef<HTMLDivElement | null>(null);
+  const mouseDownRef = useRef(false);
+  const [linkUrl, setLinkUrl] = useState("");
+  const [isEditMode, setEditMode] = useState(false);
+  const [lastSelection, setLastSelection] = useState<
+    RangeSelection | NodeSelection | GridSelection | null
+  >(null);
+
+  const updateLinkEditor = useCallback(() => {
     const selection = $getSelection();
     if ($isRangeSelection(selection)) {
       const node = getSelectedNode(selection);
       const parent = node.getParent();
       if ($isLinkNode(parent)) {
-        console.log(parent.getURL());
+        setLinkUrl(parent.getURL());
       } else if ($isLinkNode(node)) {
-        console.log(node.getURL());
+        setLinkUrl(node.getURL());
+      } else {
+        setLinkUrl("");
       }
     }
-  }, []);
 
-  // 範囲選択イベントの拾い方
-  useEffect(() => {
-    return editor.registerCommand(
-      SELECTION_CHANGE_COMMAND,
-      () => {
-        updatePopup();
-        return true;
-      },
-      COMMAND_PRIORITY_LOW
-    );
-  }, [editor, updatePopup]);
+    // 範囲指定しているnodeのelementを取得
+    const editorElem = editorRef.current;
+    const nativeSelection = window.getSelection();
+    const activeElement = document.activeElement;
+    if (editorElem === null) {
+      return;
+    }
+    const rootElement = editor.getRootElement();
 
-  // クリックイベントの拾いかた
-  //useEffect(() => {
-  //  return editor.registerRootListener(
-  //    (
-  //      rootElement: null | HTMLElement,
-  //      prevRootElement: null | HTMLElement
-  //    ) => {
-  //      if (prevRootElement !== null) {
-  //        prevRootElement.removeEventListener("click", () => {
-  //          console.log("root click");
-  //        });
-  //      }
+    if (
+      selection !== null &&
+      nativeSelection !== null &&
+      !nativeSelection.isCollapsed &&
+      rootElement !== null &&
+      rootElement.contains(nativeSelection.anchorNode)
+    ) {
+      const domRange = nativeSelection.getRangeAt(0);
+      let rect;
+      if (nativeSelection.anchorNode === rootElement) {
+        let inner = rootElement;
+        while (inner.firstElementChild != null) {
+          inner = inner.firstElementChild as HTMLElement;
+        }
+        rect = inner.getBoundingClientRect();
+      } else {
+        rect = domRange.getBoundingClientRect();
+      }
 
-  //      if (rootElement !== null) {
-  //        rootElement.addEventListener("click", () => {
-  //          console.log("root click");
-  //        });
-  //      }
-  //    }
-  //  );
-  //});
-
-  const updateLink = useCallback(() => {
-    editor.dispatchCommand(TOGGLE_LINK_COMMAND, "http://yahoo.co.jp");
+      if (!mouseDownRef.current) {
+        positionEditorElement(editorElem, rect);
+      }
+      setLastSelection(selection);
+    } else if (!activeElement || activeElement.className !== "link-input") {
+      positionEditorElement(editorElem, null);
+      setLastSelection(null);
+      setEditMode(false);
+      setLinkUrl("");
+    }
   }, [editor]);
 
-  // ツールバーの表示
+  useEffect(() => {
+    return mergeRegister(
+      editor.registerUpdateListener(({ editorState }) => {
+        editorState.read(() => {
+          updateLinkEditor();
+        });
+      }),
+
+      editor.registerCommand(
+        SELECTION_CHANGE_COMMAND,
+        () => {
+          updateLinkEditor();
+          return true;
+        },
+        1
+      )
+    );
+  }, [editor, updateLinkEditor]);
+
   return (
-    <div className={styles.toolbar}>
-      <button
-        type="button"
-        role="checkbox"
-        title={SupportedBlockType["h1"]}
-        aria-label={SupportedBlockType["h1"]}
-        aria-checked={blockType === "h1"}
-        onClick={() => formatHeading("h1")} // ボタンがクリックされたらフォーマット開始
-      >
-        <div>H1</div>
-      </button>
-      <button
-        type="button"
-        role="checkbox"
-        title={SupportedBlockType["h2"]}
-        aria-label={SupportedBlockType["h2"]}
-        aria-checked={blockType === "h2"}
-        onClick={() => formatHeading("h2")}
-      >
-        <div>H2</div>
-      </button>
-      <button
-        type="button"
-        role="checkbox"
-        title={SupportedBlockType["h3"]}
-        aria-label={SupportedBlockType["h3"]}
-        aria-checked={blockType === "h3"}
-        onClick={() => formatHeading("h3")}
-      >
-        <div>H3</div>
-      </button>
-      <button
-        type="button"
-        role="checkbox"
-        title={SupportedBlockType["h3"]}
-        aria-label={SupportedBlockType["h3"]}
-        aria-checked={blockType === "h3"}
-        onClick={() => updateLink()}
-      >
-        <div>LK</div>
-      </button>
+    <div ref={editorRef} className={styles.testEditorContainer}>
+      <div className={styles.testEditorContent}>editor test</div>
     </div>
   );
-};
+}
+
+function getSelectedNode(selection: RangeSelection) {
+  const anchor = selection.anchor;
+  const focus = selection.focus;
+  const anchorNode = selection.anchor.getNode();
+  const focusNode = selection.focus.getNode();
+  if (anchorNode === focusNode) {
+    return anchorNode;
+  }
+  const isBackward = selection.isBackward();
+  if (isBackward) {
+    return $isAtNodeEnd(focus) ? anchorNode : focusNode;
+  } else {
+    return $isAtNodeEnd(anchor) ? focusNode : anchorNode;
+  }
+}
