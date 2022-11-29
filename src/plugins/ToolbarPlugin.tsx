@@ -50,6 +50,9 @@ export const ToolbarPlugin = () => {
   const [editor] = useLexicalComposerContext(); // lexical editorインスタンスを取得
   const [url, setUrl] = useState("");
 
+  // エディタ
+  const [isLink, setIsLink] = useState(false);
+
   // heading nodeの追加
   const formatHeading = useCallback(
     (type: HeadingTagType) => {
@@ -128,6 +131,12 @@ export const ToolbarPlugin = () => {
       } else {
         //console.log("not link node");
       }
+      // Update links
+      if ($isLinkNode(parent) || $isLinkNode(node)) {
+        setIsLink(true);
+      } else {
+        setIsLink(false);
+      }
     }
   }, []);
 
@@ -165,8 +174,13 @@ export const ToolbarPlugin = () => {
     editor.dispatchCommand(TOGGLE_LINK_COMMAND, url);
   }, [editor, url]);
 
-  // エディタ
-  const [show, setShow] = useState(false);
+  const insertLink = useCallback(() => {
+    if (!isLink) {
+      editor.dispatchCommand(TOGGLE_LINK_COMMAND, "https://");
+    } else {
+      editor.dispatchCommand(TOGGLE_LINK_COMMAND, null);
+    }
+  }, [editor, isLink]);
 
   // ツールバーの表示
   return (
@@ -218,7 +232,7 @@ export const ToolbarPlugin = () => {
           title={SupportedBlockType["h3"]}
           aria-label={SupportedBlockType["h3"]}
           aria-checked={blockType === "h3"}
-          onClick={() => setShow(true)}
+          onClick={insertLink}
         >
           <div>MD</div>
         </button>
@@ -235,9 +249,9 @@ export const ToolbarPlugin = () => {
           ></input>
         </div>
       </div>
-      {show &&
+      {isLink &&
         createPortal(
-          <FloatingEditor editor={editor} show={show}></FloatingEditor>,
+          <FloatingEditor editor={editor}></FloatingEditor>,
           document.body
         )}
     </>
@@ -258,10 +272,9 @@ function positionEditorElement(editor: HTMLElement, rect: ClientRect | null) {
 
 type FloatingEditorProps = {
   editor: LexicalEditor;
-  show: boolean;
 };
 
-function FloatingEditor({ editor, show }: FloatingEditorProps) {
+function FloatingEditor({ editor }: FloatingEditorProps) {
   const editorRef = useRef<HTMLDivElement | null>(null);
   const mouseDownRef = useRef(false);
   const [linkUrl, setLinkUrl] = useState("");
