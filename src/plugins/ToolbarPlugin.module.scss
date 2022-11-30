@@ -71,3 +71,18 @@
   top: 0;
   left: 0;
 }
+
+.link-input {
+  display: flex;
+  flex-direction: row;
+  width: 200px;
+}
+
+.link-input a {
+  width: 100px;
+}
+
+.link-input button {
+  margin-left: 16px;
+  width: 32px;
+}

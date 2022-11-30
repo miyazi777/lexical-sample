@@ -23,6 +23,7 @@ function App() {
       <Test></Test>
       <button onClick={() => setShow(!show)}>show</button>
       {show && createPortal(<Test2></Test2>, document.body)}
+      <Editor />
     </div>
   );
 }

@@ -258,6 +258,7 @@ export const ToolbarPlugin = () => {
   );
 };
 
+// domの表示位置を設定
 function positionEditorElement(editor: HTMLElement, rect: ClientRect | null) {
   if (rect === null) {
     editor.style.opacity = "0";
@@ -277,6 +278,7 @@ type FloatingEditorProps = {
 function FloatingEditor({ editor }: FloatingEditorProps) {
   const editorRef = useRef<HTMLDivElement | null>(null);
   const mouseDownRef = useRef(false);
+  const inputRef = useRef<HTMLInputElement | null>(null);
   const [linkUrl, setLinkUrl] = useState("");
   const [isEditMode, setEditMode] = useState(false);
   const [lastSelection, setLastSelection] = useState<
@@ -297,7 +299,7 @@ function FloatingEditor({ editor }: FloatingEditorProps) {
       }
     }
 
-    // 範囲指定しているnodeのelementを取得
+    // 範囲指定しているnodeのelementを特定（elementの座標位置を取得する為）
     const editorElem = editorRef.current;
     const nativeSelection = window.getSelection();
     const activeElement = document.activeElement;
@@ -345,6 +347,7 @@ function FloatingEditor({ editor }: FloatingEditorProps) {
         });
       }),
 
+      //
       editor.registerCommand(
         SELECTION_CHANGE_COMMAND,
         () => {
@@ -364,13 +367,47 @@ function FloatingEditor({ editor }: FloatingEditorProps) {
     });
   }, [editor, updateLinkEditor]);
 
+  // ポップアップが起動した時にinputにフォーカスする為
+  useEffect(() => {
+    if (isEditMode && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [isEditMode]);
+
   return (
     <div ref={editorRef} className={styles.testEditorContainer}>
-      <div>editor test</div>
+      {isEditMode ? (
+        <input
+          ref={inputRef}
+          value={linkUrl}
+          onChange={(e) => setLinkUrl(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              if (lastSelection !== null) {
+                if (linkUrl !== "") {
+                  editor.dispatchCommand(TOGGLE_LINK_COMMAND, linkUrl);
+                }
+                setEditMode(false);
+              }
+            }
+          }}
+        ></input>
+      ) : (
+        <>
+          <div className="link-input">
+            <a href={linkUrl} target="_blank" rel="noopener noreferrer">
+              {linkUrl}
+            </a>
+            <button onClick={() => setEditMode(true)}>edit</button>
+          </div>
+        </>
+      )}
     </div>
   );
 }
 
+// 範囲指定されているノードから必要なノードを取得
 function getSelectedNode(selection: RangeSelection) {
   const anchor = selection.anchor;
   const focus = selection.focus;
