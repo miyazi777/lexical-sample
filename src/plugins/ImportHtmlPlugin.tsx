@@ -6,7 +6,7 @@ import {
   useState,
 } from "react";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
-import { $getRoot, $insertNodes, $setSelection } from "lexical";
+import { $getRoot, $insertNodes } from "lexical";
 import { $generateNodesFromDOM } from "@lexical/html";
 
 type Props = {
